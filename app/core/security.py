@@ -39,3 +39,7 @@ def create_access_token(
         payload.update(extra_claims)
 
     return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)
+
+#解析并验证 JWT token
+def decode_access_token(token: str) -> dict[str, Any]:
+    return jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
