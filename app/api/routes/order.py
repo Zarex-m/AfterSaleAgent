@@ -2,10 +2,7 @@ from app.services.order_service import list_orders, get_order_by_no, get_order_i
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
-from app.db.models.order import Order, OrderItem
-from app.db.models.payment import Payment
-from app.db.models.shipment import Shipment
-from app.schemas.order import OrderListItemResponse,OrderDetailResponse, OrderItemResponse, PaymentResponse, ShipmentResponse   
+from app.schemas.order import OrderListItemResponse,OrderDetailResponse, PaymentResponse, ShipmentResponse   
 from app.api.dependencies import get_current_user
 
 router = APIRouter(prefix="/orders", tags=["orders"])

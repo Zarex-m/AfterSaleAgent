@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.db.models.order import Order, OrderItem, OrderStatus
+from app.db.models.order import Order, OrderItem
 from app.db.models.payment import Payment
 from app.db.models.shipment import Shipment
 
