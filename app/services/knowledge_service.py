@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models.document import Document, DocumentChunk, DocumentStatus
@@ -115,3 +115,59 @@ async def ingest_document(
         document.status = DocumentStatus.FAILED.value
         await db.commit()
         raise
+
+#把用户的查询拆成关键词
+def tokenize_query(query: str) -> list[str]:
+    normalized = query.strip().lower()
+    if not normalized:
+        return []
+
+    tokens = re.split(r"[\s,，。！？!?.；;：:、]+", normalized)
+    return [token for token in tokens if token]
+
+#计算查询与文本块的相关度得分，完全匹配得2分，包含关键词得1分
+def calculate_keyword_score(query: str, content: str, tokens: list[str]) -> float:
+    normalized_query = query.strip().lower()
+    normalized_content = content.lower()
+
+    score = 0.0
+
+    if normalized_query and normalized_query in normalized_content:
+        score += 2.0
+
+    for token in tokens:
+        if token in normalized_content:
+            score += 1.0
+
+    return score
+
+#从数据库所有切片中，找出最相关的前K个切片返回给用户
+async def search_policy_chunks(
+    db: AsyncSession,
+    query: str,
+    top_k: int = 5,
+) -> list[dict]:
+    tokens = tokenize_query(query)
+
+    result = await db.execute(select(DocumentChunk))
+    chunks = result.scalars().all()
+
+    scored_results = []
+    for chunk in chunks:
+        score = calculate_keyword_score(query, chunk.content, tokens)
+        if score <= 0:
+            continue
+
+        scored_results.append(
+            {
+                "chunk_id": chunk.id,
+                "document_id": chunk.document_id,
+                "chunk_index": chunk.chunk_index,
+                "content": chunk.content,
+                "score": score,
+                "metadata": chunk.metadata_json,
+            }
+        )
+
+    scored_results.sort(key=lambda item: item["score"], reverse=True)
+    return scored_results[:top_k]
