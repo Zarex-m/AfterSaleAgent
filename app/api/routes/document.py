@@ -5,6 +5,8 @@ from app.db.session import get_db
 from app.schemas.document import DocumentResponse
 from app.api.dependencies import get_current_user
 from pathlib import Path
+from app.services.knowledge_service import ingest_document
+
 from uuid import uuid4
 ALLOWED_EXTENSIONS = {".txt", ".md"}
 
@@ -58,3 +60,18 @@ async def get_document_detail(
     if document is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return DocumentResponse.model_validate(document)
+
+@router.post("/{document_id}/ingest")
+async def ingest_document_api(
+    document_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(get_current_user),
+) -> dict:
+    try:
+        return await ingest_document(db, document_id)
+    except ValueError as exc:
+        if str(exc) == "DOCUMENT_NOT_FOUND":
+            raise HTTPException(status_code=404, detail="Document not found") from exc
+        if str(exc) == "DOCUMENT_FILE_MISSING":
+            raise HTTPException(status_code=400, detail="Document file missing") from exc
+        raise HTTPException(status_code=400, detail=str(exc)) from exc            
