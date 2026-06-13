@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import decode_access_token
 from app.db.models.user import User
 from app.db.session import get_db
-from app.services.auth_service import get_user_by_id
+from app.repositories.user_repository import get_user_by_id
 
 bearer_scheme = HTTPBearer()
 

@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AfterSaleAgent Dashboard</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <script defer src="/assets/app.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand">
+          <div class="brand-mark">AS</div>
+          <div>
+            <div class="brand-name">AfterSaleAgent</div>
+            <div class="brand-subtitle">售后智能工作台</div>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="主导航">
+          <button class="nav-item is-active" data-view="workspace" type="button">
+            <span class="nav-icon">AI</span>
+            <span>Agent 工作台</span>
+          </button>
+          <button class="nav-item" data-view="orders" type="button">
+            <span class="nav-icon">OD</span>
+            <span>订单</span>
+          </button>
+          <button class="nav-item" data-view="knowledge" type="button">
+            <span class="nav-icon">KB</span>
+            <span>知识库</span>
+          </button>
+          <button class="nav-item" data-view="documents" type="button">
+            <span class="nav-icon">DC</span>
+            <span>文档</span>
+          </button>
+          <button class="nav-item" data-view="approvals" type="button">
+            <span class="nav-icon">AP</span>
+            <span>审批</span>
+          </button>
+          <button class="nav-item" data-view="runs" type="button">
+            <span class="nav-icon">LG</span>
+            <span>运行记录</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          <div class="note-label">API</div>
+          <div class="note-value" id="apiBaseLabel">/api</div>
+        </div>
+      </aside>
+
+      <main class="main-shell">
+        <header class="topbar">
+          <button class="icon-button mobile-only" id="sidebarToggle" type="button" aria-label="打开导航">
+            <span></span>
+            <span></span>
+            <span></span>
+          </button>
+          <div class="topbar-title">
+            <span class="eyebrow">B2B After-sales Console</span>
+            <strong id="viewTitle">Agent 工作台</strong>
+          </div>
+          <div class="topbar-actions">
+            <label class="api-control">
+              <span>API Base</span>
+              <input id="apiBaseInput" type="text" value="/api" />
+            </label>
+            <button class="ghost-button" id="saveApiBaseButton" type="button">应用</button>
+            <div class="session-pill" id="sessionPill">未登录</div>
+            <button class="ghost-button is-hidden" id="logoutButton" type="button">退出</button>
+          </div>
+        </header>
+
+        <section class="auth-gate" id="authGate">
+          <div class="auth-panel">
+            <div class="auth-copy">
+              <span class="eyebrow">Secure Access</span>
+              <h1>登录售后工作台</h1>
+              <p>连接当前 FastAPI 后端，拿到 JWT 后即可访问订单、知识库和文档接口。</p>
+            </div>
+            <div class="auth-forms">
+              <div class="segmented" role="tablist" aria-label="认证方式">
+                <button class="segment is-active" data-auth-tab="login" type="button">登录</button>
+                <button class="segment" data-auth-tab="register" type="button">注册</button>
+              </div>
+
+              <form class="auth-form" id="loginForm" data-auth-form="login">
+                <label>
+                  邮箱
+                  <input name="email" type="email" autocomplete="email" placeholder="agent@test.com" required />
+                </label>
+                <label>
+                  密码
+                  <input name="password" type="password" autocomplete="current-password" minlength="8" placeholder="至少 8 位" required />
+                </label>
+                <button class="primary-button full-width" type="submit">登录</button>
+              </form>
+
+              <form class="auth-form is-hidden" id="registerForm" data-auth-form="register">
+                <label>
+                  邮箱
+                  <input name="email" type="email" autocomplete="email" placeholder="new-agent@test.com" required />
+                </label>
+                <label>
+                  密码
+                  <input name="password" type="password" autocomplete="new-password" minlength="8" placeholder="至少 8 位" required />
+                </label>
+                <button class="primary-button full-width" type="submit">创建账号</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-shell" id="contentShell" aria-live="polite">
+          <section class="view is-active" data-view-panel="workspace">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Agent Workspace</span>
+                <h2>售后判断工作台</h2>
+              </div>
+              <button class="secondary-button" id="loadDemoButton" type="button">填入示例</button>
+            </div>
+
+            <div class="workspace-grid">
+              <section class="panel composer-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>客户诉求</h3>
+                    <p>输入订单号和售后问题，前端会调用现有接口生成演示判断链路。</p>
+                  </div>
+                </div>
+                <label>
+                  订单号
+                  <input id="agentOrderNoInput" type="text" placeholder="10086" inputmode="numeric" />
+                </label>
+                <label>
+                  消息
+                  <textarea id="agentMessageInput" rows="7" placeholder="订单 10086 已经签收两天了，用户不满意，想申请退款，可以直接退吗？"></textarea>
+                </label>
+                <div class="quick-prompts">
+                  <button data-template="normal" type="button">普通退款</button>
+                  <button data-template="high" type="button">高金额审批</button>
+                  <button data-template="virtual" type="button">虚拟商品</button>
+                </div>
+                <button class="primary-button full-width" id="runAgentButton" type="button">开始判断</button>
+              </section>
+
+              <section class="panel timeline-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>执行时间线</h3>
+                    <p>模拟未来 SSE 体验，后端 Agent Run 接口完成后可直接替换。</p>
+                  </div>
+                  <span class="status-dot" id="runStatusDot">Ready</span>
+                </div>
+                <ol class="timeline" id="runTimeline">
+                  <li class="timeline-empty">等待一次售后判断。</li>
+                </ol>
+              </section>
+
+              <section class="panel context-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>上下文</h3>
+                    <p>订单、支付、物流、政策和风险结论会在这里汇总。</p>
+                  </div>
+                </div>
+                <div class="context-stack" id="agentContext">
+                  <div class="empty-state">暂无上下文。</div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="orders">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Orders</span>
+                <h2>订单查询</h2>
+              </div>
+              <button class="secondary-button" id="refreshOrdersButton" type="button">刷新订单</button>
+            </div>
+
+            <div class="split-grid">
+              <section class="panel table-panel">
+                <div class="toolbar">
+                  <input id="orderSearchInput" type="search" placeholder="搜索订单号、状态、客户 ID" />
+                </div>
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>订单号</th>
+                        <th>客户</th>
+                        <th>状态</th>
+                        <th>金额</th>
+                        <th>创建时间</th>
+                      </tr>
+                    </thead>
+                    <tbody id="ordersTableBody">
+                      <tr>
+                        <td colspan="5" class="muted-cell">暂无订单。</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section class="panel detail-panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>订单详情</h3>
+                    <p>点击左侧订单查看支付、物流和明细。</p>
+                  </div>
+                </div>
+                <div id="orderDetailPane" class="detail-empty">未选择订单。</div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="knowledge">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Knowledge Retrieval</span>
+                <h2>知识库检索</h2>
+              </div>
+            </div>
+
+            <div class="knowledge-grid">
+              <section class="panel">
+                <form class="search-form" id="knowledgeSearchForm">
+                  <label>
+                    检索问题
+                    <textarea name="query" rows="5" placeholder="签收两天的普通商品是否可以七天无理由退款？" required></textarea>
+                  </label>
+                  <label>
+                    Top K
+                    <input name="top_k" type="number" min="1" max="20" value="5" />
+                  </label>
+                  <button class="primary-button" type="submit">检索政策</button>
+                </form>
+              </section>
+
+              <section class="panel">
+                <div class="panel-heading">
+                  <div>
+                    <h3>检索结果</h3>
+                    <p>展示 chunk、分数和文档来源。</p>
+                  </div>
+                </div>
+                <div class="result-list" id="knowledgeResults">
+                  <div class="empty-state">输入问题后查看政策片段。</div>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="documents">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Documents</span>
+                <h2>知识库文档</h2>
+              </div>
+              <button class="secondary-button" id="refreshDocumentsButton" type="button">刷新文档</button>
+            </div>
+
+            <div class="split-grid">
+              <section class="panel">
+                <form class="upload-form" id="documentUploadForm">
+                  <label>
+                    标题
+                    <input name="title" type="text" placeholder="七天无理由退款政策" />
+                  </label>
+                  <label>
+                    文件
+                    <input name="file" type="file" accept=".txt,.md" required />
+                  </label>
+                  <button class="primary-button" type="submit">上传文档</button>
+                </form>
+              </section>
+
+              <section class="panel table-panel">
+                <div class="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>标题</th>
+                        <th>状态</th>
+                        <th>上传人</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody id="documentsTableBody">
+                      <tr>
+                        <td colspan="5" class="muted-cell">暂无文档。</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="approvals">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Roadmap Preview</span>
+                <h2>审批中心</h2>
+              </div>
+            </div>
+
+            <div class="approval-grid">
+              <section class="panel approval-card">
+                <span class="badge danger">待审批</span>
+                <h3>订单 10087 高金额退款</h3>
+                <p>退款金额 1299.00，大于 500 元，需要售后主管确认。</p>
+                <div class="approval-actions">
+                  <button class="secondary-button" type="button">通过</button>
+                  <button class="ghost-button" type="button">拒绝</button>
+                </div>
+              </section>
+              <section class="panel approval-card">
+                <span class="badge neutral">后端待接入</span>
+                <h3>接口规划</h3>
+                <p>未来会接入 GET /api/approvals、approve 和 reject 接口。</p>
+              </section>
+            </div>
+          </section>
+
+          <section class="view" data-view-panel="runs">
+            <div class="view-header">
+              <div>
+                <span class="eyebrow">Agent Runs</span>
+                <h2>运行记录</h2>
+              </div>
+            </div>
+            <section class="panel">
+              <div id="runHistoryPane" class="empty-state">完成一次 Agent 判断后，这里会显示最近一次运行摘要。</div>
+            </section>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="toast-stack" id="toastStack" aria-live="assertive"></div>
+  </body>
+</html>

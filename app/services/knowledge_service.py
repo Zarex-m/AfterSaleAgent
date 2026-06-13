@@ -2,11 +2,10 @@ import re
 from pathlib import Path
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models.document import Document, DocumentChunk, DocumentStatus
-from app.services.document_service import get_document_by_id
+from app.db.models.document import DocumentChunk, DocumentStatus
+from app.repositories import document_repository
 
 #读取文本文件内容
 def read_text_file(file_path:str)->str:
@@ -62,15 +61,13 @@ async def delete_chunks_by_document_id(
     db: AsyncSession,
     document_id: int,
 ) -> None:
-    await db.execute(
-        delete(DocumentChunk).where(DocumentChunk.document_id == document_id)
-    )
+    await document_repository.delete_chunks_by_document_id(db, document_id)
     
 async def ingest_document(
     db: AsyncSession,
     document_id: int,
 ) -> dict:
-    document = await get_document_by_id(db, document_id)
+    document = await document_repository.get_document_by_id(db, document_id)
     if document is None:
         raise ValueError("DOCUMENT_NOT_FOUND")
 
@@ -87,19 +84,20 @@ async def ingest_document(
 
         await delete_chunks_by_document_id(db, document.id)
 
-        for index, chunk in enumerate(chunks):
-            db.add(
-                DocumentChunk(
-                    document_id=document.id,
-                    content=chunk,
-                    chunk_index=index,
-                    metadata_json={
-                        "title": document.title,
-                        "source_type": document.source_type,
-                        "file_path": document.file_path,
-                    },
-                )
+        document_chunks = [
+            DocumentChunk(
+                document_id=document.id,
+                content=chunk,
+                chunk_index=index,
+                metadata_json={
+                    "title": document.title,
+                    "source_type": document.source_type,
+                    "file_path": document.file_path,
+                },
             )
+            for index, chunk in enumerate(chunks)
+        ]
+        await document_repository.create_document_chunks(db, document_chunks)
 
         document.status = DocumentStatus.READY.value
         await db.commit()
@@ -149,8 +147,7 @@ async def search_policy_chunks(
 ) -> list[dict]:
     tokens = tokenize_query(query)
 
-    result = await db.execute(select(DocumentChunk))
-    chunks = result.scalars().all()
+    chunks = await document_repository.list_document_chunks(db)
 
     scored_results = []
     for chunk in chunks:

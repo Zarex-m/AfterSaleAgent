@@ -41,6 +41,24 @@ Start here:
 
 The guides include product requirements, architecture, database design, API list, LangGraph workflow, development schedule, demo cases, and frontend AI prompts.
 
+## Local Dashboard Preview
+
+This project includes a lightweight dashboard preview served by FastAPI.
+
+Start the backend:
+
+```bash
+uvicorn app.main:app --reload
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/dashboard
+```
+
+The preview connects to the current `/api` endpoints for auth, orders, documents, and knowledge search. Agent run and approval screens are prepared as demo UI while the backend APIs are still under development.
+
 ## Recommended Stack
 
 - Python 3.12
